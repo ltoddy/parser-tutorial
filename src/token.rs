@@ -3,7 +3,7 @@ use std::str::Chars;
 
 /// 对于Json的token有：
 /// `,`, `:`, `{`, `}`, `[`, `]`, `String`, `Number`, `Boolean`, `Null`
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     Comma,
     Colon,
@@ -33,7 +33,7 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(&ch) = self.source.peek() {
             match ch {
-                'a'..='z' => {
+                'a'..='z' | 'A'..='Z' => {
                     label.push(ch);
                     self.source.next();
                 }
@@ -104,7 +104,7 @@ impl<'a> Iterator for Tokenizer<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         'lex: while let Some(ch) = self.source.next() {
             return Some(match ch {
-                '.' => Token::Comma,
+                ',' => Token::Comma,
                 ':' => Token::Colon,
                 '[' => Token::BraceOn,
                 ']' => Token::BraceOff,
@@ -112,13 +112,13 @@ impl<'a> Iterator for Tokenizer<'a> {
                 '}' => Token::BracketOff,
                 '"' => Token::String(self.read_string(ch)),
                 '0'..='9' => Token::Number(self.read_number(ch)),
-                'a'..='z' => {
+                'a'..='z' | 'A'..='Z' => {
                     let label = self.read_label(ch);
                     match label.as_ref() {
                         "true" => Token::Boolean(true),
                         "false" => Token::Boolean(false),
                         "null" => Token::Null,
-                        _ => panic!("Invalid symbol: {}", label),
+                        _ => panic!("Invalid label: {}", label),
                     }
                 }
                 _ => {
