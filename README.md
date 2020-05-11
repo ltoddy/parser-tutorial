@@ -51,3 +51,145 @@ pub struct Tokenizer<'a> {
 }
 ```
 
+对于Tokenizer，我们希望它能够有一个方法：next，每次调用这个方法，会返回
+给我们一个Token，当没有Token返回的时候，则表示输入的字符串已经全部解析完。
+
+很幸运，Rust的内置接口里面（trait我一般称作特征，这里写作了接口，这样子大众也更容易方便理解。）。
+
+`Iterator`接口。
+
+*src/token.rs*
+```rust
+impl<'a> Iterator for Tokenizer<'a> {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        'lex: while let Some(ch) = self.source.next() {
+            return Some(match ch {
+                ',' => Token::Comma,
+                ':' => Token::Colon,
+                '[' => Token::BraceOn,
+                ']' => Token::BraceOff,
+                '{' => Token::BracketOn,
+                '}' => Token::BracketOff,
+                '"' => Token::String(self.read_string(ch)),
+                '0'..='9' => Token::Number(self.read_number(ch)),
+                'a'..='z' | 'A'..='Z' => {
+                    let label = self.read_label(ch);
+                    match label.as_ref() {
+                        "true" => Token::Boolean(true),
+                        "false" => Token::Boolean(false),
+                        "null" => Token::Null,
+                        _ => panic!("Invalid label: {}", label),
+                    }
+                }
+                _ => {
+                    if ch.is_whitespace() {
+                        continue 'lex;
+                    } else {
+                        panic!("Invalid character: {}", ch);
+                    }
+                }
+            });
+        }
+
+        None
+    }
+}
+```
+
+我们一个一个读入字符串的字符，判断他归属于哪一个类型（token type），
+
+从上面代码里看,对于那些符号的判断,最为简单,直接返回它对应的Token就可以了.
+对于字符串,数字,符号(null, true, false),就稍微难一点判断了.
+
+对于符号(null, true, false)这样子的, `{ "is_symbol": true }`比如这样子的json字符串.
+`true`不向字符串,会有双引号包围,那么对于判断符号,它只要是字母符号开头就可以了.当遇到其他
+字符(空格),便可以视作符号结束.
+
+*src/token.rs*
+
+```rust
+fn read_symbol(&mut self, first: char) -> String {
+    let mut symbol = first.to_string();
+
+    while let Some(&ch) = self.source.peek() {
+        match ch {
+            'a'..='z' => {
+                symbol.push(ch);
+                self.source.next();
+            }
+            _ => break,
+        }
+    }
+
+    symbol
+}
+```
+
+
+对于数字,包含十个数字以及小数点,那么进行数字的判断,只要他以数字开头便可.
+并且,有且只可能有0个或1个小数点.
+
+*src/token.rs*
+
+```rust
+fn read_number(&mut self, first: char) -> f64 {
+    let mut value = first.to_string();
+    let mut point = false;
+
+    while let Some(&ch) = self.source.peek() {
+        match ch {
+            '0'..='9' => {
+                value.push(ch);
+                self.source.next();
+            }
+            '.' => {
+                if !point {
+                    point = true;
+                    value.push(ch);
+                    self.source.next();
+                } else {
+                    return value.parse::<f64>().unwrap();
+                }
+            }
+            _ => return value.parse::<f64>().unwrap(),
+        }
+    }
+
+    value.parse::<f64>().unwrap()
+}
+```
+
+对于字符串来说,由一对双引号包围,并且,字符串中可能会出现转义字符.
+
+*src/token.rs*
+
+```rust
+fn read_string(&mut self, first: char) -> String {
+    let mut value = String::new();
+    let mut escape = false;
+
+    while let Some(ch) = self.source.next() {
+        if ch == first && escape == false {
+            return value;
+        }
+        match ch {
+            '\\' => {
+                if escape {
+                    escape = false;
+                    value.push(ch);
+                } else {
+                    escape = true;
+                }
+            }
+            _ => {
+                value.push(ch);
+                escape = false;
+            }
+        }
+    }
+
+    value
+}
+```
