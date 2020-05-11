@@ -193,3 +193,26 @@ fn read_string(&mut self, first: char) -> String {
     value
 }
 ```
+
+等到这里,如果实现了Tokenizer,让他能够不断地给我们解析Token,基本上第一个难点就算结束了.
+因为,当我们把输入的字符串一个一个的解析成了一系列Token之后,剩下的很大一部分就是天高任鸟飞
+的时候,为什么?很简单,Token也是我们自己定义的数据结构,而且它在内存中,我们想怎么用它就可以
+怎么用它.
+
+下面,我们将我们一些列的Tokens解析成我们的Json.
+
+*src/value*
+
+```rust
+pub enum Json {
+    Null,
+    String(String),
+    Number(f64),
+    Boolean(bool),
+    Array(Vec<Json>),
+    Object(HashMap<String, Json>),
+}
+```
+
+如果你不清楚Json, 你可以看下: https://www.json.org/json-zh.html
+
