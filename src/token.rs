@@ -1,6 +1,3 @@
-use std::iter::Peekable;
-use std::str::Chars;
-
 /// 对于Json的token有：
 /// `,`, `:`, `{`, `}`, `[`, `]`, `String`, `Number`, `Boolean`, `Null`
 #[derive(Debug, PartialEq)]
