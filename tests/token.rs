@@ -1,6 +1,7 @@
 #[cfg(test)]
 pub mod tokenizer_tests {
-    use json::token::{Token, Tokenizer};
+    use json::token::Token;
+    use json::tokenizer::Tokenizer;
 
     #[test]
     pub fn test_tokenizer_creatable() {

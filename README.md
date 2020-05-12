@@ -44,7 +44,7 @@ pub enum Token {
 
 对于将字符串解析成一些列Token的东西，我们称之为：Tokenizer。
 
-*src/token.rs*
+*src/tokenizer.rs*
 ```rust
 pub struct Tokenizer<'a> {
     source: Peekable<Chars<'a>>,
@@ -58,7 +58,7 @@ pub struct Tokenizer<'a> {
 
 `Iterator`接口。
 
-*src/token.rs*
+*src/tokenizer.rs*
 ```rust
 impl<'a> Iterator for Tokenizer<'a> {
     type Item = Token;
@@ -107,7 +107,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 `true`不向字符串,会有双引号包围,那么对于判断符号,它只要是字母符号开头就可以了.当遇到其他
 字符(空格),便可以视作符号结束.
 
-*src/token.rs*
+*src/tokenizer.rs*
 
 ```rust
 fn read_symbol(&mut self, first: char) -> String {
@@ -131,7 +131,7 @@ fn read_symbol(&mut self, first: char) -> String {
 对于数字,包含十个数字以及小数点,那么进行数字的判断,只要他以数字开头便可.
 并且,有且只可能有0个或1个小数点.
 
-*src/token.rs*
+*src/tokenizer.rs*
 
 ```rust
 fn read_number(&mut self, first: char) -> f64 {
@@ -163,7 +163,7 @@ fn read_number(&mut self, first: char) -> f64 {
 
 对于字符串来说,由一对双引号包围,并且,字符串中可能会出现转义字符.
 
-*src/token.rs*
+*src/tokenizer.rs*
 
 ```rust
 fn read_string(&mut self, first: char) -> String {
@@ -201,7 +201,7 @@ fn read_string(&mut self, first: char) -> String {
 
 下面,我们将我们一些列的Tokens解析成我们的Json.
 
-*src/value*
+*src/value.rs*
 
 ```rust
 pub enum Json {
@@ -216,3 +216,7 @@ pub enum Json {
 
 如果你不清楚Json, 你可以看下: https://www.json.org/json-zh.html
 
+下一步,编写Parser!
+
+Parser接受我们刚才的Tokens, 然输出抽样语法树(一般来说,Parser接受字符串,然后输出抽象语法书,不过,管他呢,我们能实现我们想要实现的便可,管它具体的定义呢),
+对于我们的Json Parser,输出的就是我们刚才定义的`Json`结构.
