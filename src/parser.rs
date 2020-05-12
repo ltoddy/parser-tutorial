@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use crate::do_nothing;
 use crate::token::Token;
 use crate::tokenizer::Tokenizer;
 use crate::value::Json;
-use crate::do_nothing;
 
 impl Into<Json> for HashMap<String, Json> {
     fn into(mut self) -> Json {

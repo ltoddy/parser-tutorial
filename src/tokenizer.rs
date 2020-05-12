@@ -106,10 +106,10 @@ impl<'a> Iterator for Tokenizer<'a> {
             return Some(match ch {
                 ',' => Token::Comma,
                 ':' => Token::Colon,
-                '[' => Token::BraceOn,
-                ']' => Token::BraceOff,
-                '{' => Token::BracketOn,
-                '}' => Token::BracketOff,
+                '[' => Token::BracketOn,
+                ']' => Token::BracketOff,
+                '{' => Token::BraceOn,
+                '}' => Token::BraceOff,
                 '"' => Token::String(self.read_string(ch)),
                 '0'..='9' => Token::Number(self.read_number(ch)),
                 'a'..='z' => {

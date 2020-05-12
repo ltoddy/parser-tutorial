@@ -12,8 +12,8 @@ pub mod tokenizer_tests {
     pub fn should_parse_brackets() {
         let mut tokenizer = Tokenizer::new("{}");
 
-        assert_eq!(tokenizer.next(), Some(Token::BracketOn));
-        assert_eq!(tokenizer.next(), Some(Token::BracketOff));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOn));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOff));
         assert_eq!(tokenizer.next(), None);
     }
 
@@ -21,8 +21,8 @@ pub mod tokenizer_tests {
     pub fn should_parse_braces() {
         let mut tokenizer = Tokenizer::new("[]");
 
-        assert_eq!(tokenizer.next(), Some(Token::BraceOn));
-        assert_eq!(tokenizer.next(), Some(Token::BraceOff));
+        assert_eq!(tokenizer.next(), Some(Token::BracketOn));
+        assert_eq!(tokenizer.next(), Some(Token::BracketOff));
         assert_eq!(tokenizer.next(), None);
     }
 
@@ -49,11 +49,11 @@ pub mod tokenizer_tests {
     pub fn should_parse_object() {
         let mut tokenizer = Tokenizer::new(r#"{ "key": "value" }"#);
 
-        assert_eq!(tokenizer.next(), Some(Token::BracketOn));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOn));
         assert_eq!(tokenizer.next(), Some(Token::String("key".to_owned())));
         assert_eq!(tokenizer.next(), Some(Token::Colon));
         assert_eq!(tokenizer.next(), Some(Token::String("value".to_owned())));
-        assert_eq!(tokenizer.next(), Some(Token::BracketOff));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOff));
         assert_eq!(tokenizer.next(), None);
     }
 
@@ -61,17 +61,17 @@ pub mod tokenizer_tests {
     pub fn should_parse_array() {
         let mut tokenizer = Tokenizer::new(r#"{ "key": [1, 2, "v1"] }"#);
 
-        assert_eq!(tokenizer.next(), Some(Token::BracketOn));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOn));
         assert_eq!(tokenizer.next(), Some(Token::String("key".to_owned())));
         assert_eq!(tokenizer.next(), Some(Token::Colon));
-        assert_eq!(tokenizer.next(), Some(Token::BraceOn));
+        assert_eq!(tokenizer.next(), Some(Token::BracketOn));
         assert_eq!(tokenizer.next(), Some(Token::Number(1.)));
         assert_eq!(tokenizer.next(), Some(Token::Comma));
         assert_eq!(tokenizer.next(), Some(Token::Number(2.)));
         assert_eq!(tokenizer.next(), Some(Token::Comma));
         assert_eq!(tokenizer.next(), Some(Token::String("v1".to_owned())));
-        assert_eq!(tokenizer.next(), Some(Token::BraceOff));
         assert_eq!(tokenizer.next(), Some(Token::BracketOff));
+        assert_eq!(tokenizer.next(), Some(Token::BraceOff));
         assert_eq!(tokenizer.next(), None);
     }
 }
