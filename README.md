@@ -1,18 +1,23 @@
 # json parser
 
-**之前看到知乎上有人问，会写Parser， Tokenizer是什么水平，绝大情况下，屁用没有。小部分情况，就看你运气了。**
+*之前看到知乎上有人问，会写`Parser`， `Tokenizer`是什么水平，绝大情况下，屁用没有。小部分情况，就看你运气了。因为这东西，面试又不会加分，而且，如果你面试的小公司，可能面试官甚至都不懂你在说啥。*
 
 `json`这种数据格式，应该算是人人皆知的了，其语法规则不必赘述。
 
-所以，我想借助编写一份`json parser`来讲解语法解析。通过实践学习。
+我想借助编写一份`json parser`来讲解语法解析，通过实践来学习。
 
 --------------------------------------------------------------
 
-简单来说， parser就是个转换器，输入是一个字符串，而输出是一个你自己定义一个数据结构。
-对于字符串来说，他有各种各样的符号， 例如字符串r"{ "x": 10, "y": [20]， "z": "some" }",
+&nbsp;&nbsp;&nbsp;&nbsp;简单来说，parser就是个转换器，输入是一个字符串，而输出是一个你自己定义一个数据结构。
+对于字符串来说，他有各种各样的符号， 例如字符串`r"{ "x": 10, "y": [20]， "z": "some" }"`,
 有左右花括号（一般来说，左括号叫开放括号，右括号叫做闭合括号），有逗号，有分号，有字符串，数字等等。
 
-那么，第一步，我们将一个字符串进行初次解析，讲一个一个的符号，变成我们的数据结构（Token），每个Token
+对于Json,我们需要实现两个方法:
+
+- 用于解析JSON的 `parse()` 方法.
+- 以及将对象/值转换为`JSON`字符串的`stringify()`方法。
+
+那么，第一步，我们将一个字符串进行初次解析，将一个一个的符号，变成我们的数据结构（Token），每个Token
 会标识，“它”是什么， 例如：
 
 一个字符串"some"可能会被转换成：
@@ -42,7 +47,9 @@ pub enum Token {
 }
 ```
 
-对于将字符串解析成一些列Token的东西，我们称之为：Tokenizer。
+上述`Token`枚举就包含了`JSON`字符串里所有出现‘符号’的种类：逗号，分号，左方括号，右方括号，左花括号，右花括号，字符串，数字，布尔，和null。
+
+对于将字符串解析成一系列`Token`的东西，我们称之为：`Tokenizer`。
 
 *src/tokenizer.rs*
 ```rust
@@ -51,10 +58,10 @@ pub struct Tokenizer<'a> {
 }
 ```
 
-对于Tokenizer，我们希望它能够有一个方法：next，每次调用这个方法，会返回
-给我们一个Token，当没有Token返回的时候，则表示输入的字符串已经全部解析完。
+对于Tokenizer，我们希望它能够有一个方法：`next`，每次调用这个方法，会返回
+给我们一个`Token`，当没有Token返回的时候，则表示输入的字符串已经全部解析完。
 
-很幸运，Rust的内置接口里面（trait我一般称作特征，这里写作了接口，这样子大众也更容易方便理解。）。
+很幸运，Rust的内置接口里面（trait我一般称作特征，这里写作了接口，这样子大众也更容易方便理解。），含有这么一个接口：
 
 `Iterator`接口。
 
@@ -68,14 +75,14 @@ impl<'a> Iterator for Tokenizer<'a> {
             return Some(match ch {
                 ',' => Token::Comma,
                 ':' => Token::Colon,
-                '[' => Token::BraceOn,
-                ']' => Token::BraceOff,
-                '{' => Token::BracketOn,
-                '}' => Token::BracketOff,
+                '[' => Token::BracketOn,
+                ']' => Token::BracketOff,
+                '{' => Token::BraceOn,
+                '}' => Token::BraceOff,
                 '"' => Token::String(self.read_string(ch)),
                 '0'..='9' => Token::Number(self.read_number(ch)),
-                'a'..='z' | 'A'..='Z' => {
-                    let label = self.read_label(ch);
+                'a'..='z' => {
+                    let label = self.read_symbol(ch);
                     match label.as_ref() {
                         "true" => Token::Boolean(true),
                         "false" => Token::Boolean(false),
@@ -103,33 +110,48 @@ impl<'a> Iterator for Tokenizer<'a> {
 从上面代码里看,对于那些符号的判断,最为简单,直接返回它对应的Token就可以了.
 对于字符串,数字,符号(null, true, false),就稍微难一点判断了.
 
-对于符号(null, true, false)这样子的, `{ "is_symbol": true }`比如这样子的json字符串.
-`true`不向字符串,会有双引号包围,那么对于判断符号,它只要是字母符号开头就可以了.当遇到其他
-字符(空格),便可以视作符号结束.
+对于字符串，它的样子就像`"this is a string"`，由一对双引号包围，更复杂一些的字符串，其含有转义字符：
+`"This is a string\\n"`.
+
+对于解析字符串，当我们首次遇到双引号字符时，我们判定，其随后的内容是一个字符串，当第二次遇到双引号的时候，我们判断，其字符串结束。
+
+当遇到转移字符`\`的时候，我们所需要做的就是忽略第一个`\`，将之后的字符保存。
+
+对于其他的字符，仅仅是遍历一遍保存便可。
 
 *src/tokenizer.rs*
 
 ```rust
-fn read_symbol(&mut self, first: char) -> String {
-    let mut symbol = first.to_string();
+fn read_string(&mut self, first: char) -> String {
+    let mut value = String::new();
+    let mut escape = false;
 
-    while let Some(&ch) = self.source.peek() {
+    while let Some(ch) = self.source.next() {
+        if ch == first && escape == false {
+            return value;
+        }
         match ch {
-            'a'..='z' => {
-                symbol.push(ch);
-                self.source.next();
+            '\\' => {
+                if escape {
+                    escape = false;
+                    value.push(ch);
+                } else {
+                    escape = true;
+                }
             }
-            _ => break,
+            _ => {
+                value.push(ch);
+                escape = false;
+            }
         }
     }
 
-    symbol
+    value
 }
 ```
 
-
-对于数字,包含十个数字以及小数点,那么进行数字的判断,只要他以数字开头便可.
-并且,有且只可能有0个或1个小数点.
+对于数字，其特征为数字开头，随后为数字，其中也可能包含一个小数点。所以，只要它是一数字开头，
+我们便可判断它及其后面的字符串是一个完整的数字。并且，有且只可能有0个或1个小数点。
 
 *src/tokenizer.rs*
 
@@ -161,36 +183,27 @@ fn read_number(&mut self, first: char) -> f64 {
 }
 ```
 
-对于字符串来说,由一对双引号包围,并且,字符串中可能会出现转义字符.
+对于符号(null, true, false)这样子的, `{ "is_symbol": true }`比如这样子的json字符串.
+`true`不像字符串,会有双引号包围,那么对于判断符号,它只要是字母符号开头就可以了.当遇到其他
+字符(空格),便可以视作符号结束.
 
 *src/tokenizer.rs*
 
 ```rust
-fn read_string(&mut self, first: char) -> String {
-    let mut value = String::new();
-    let mut escape = false;
+fn read_symbol(&mut self, first: char) -> String {
+    let mut symbol = first.to_string();
 
-    while let Some(ch) = self.source.next() {
-        if ch == first && escape == false {
-            return value;
-        }
+    while let Some(&ch) = self.source.peek() {
         match ch {
-            '\\' => {
-                if escape {
-                    escape = false;
-                    value.push(ch);
-                } else {
-                    escape = true;
-                }
+            'a'..='z' => {
+                symbol.push(ch);
+                self.source.next();
             }
-            _ => {
-                value.push(ch);
-                escape = false;
-            }
+            _ => break,
         }
     }
 
-    value
+    symbol
 }
 ```
 
