@@ -1,10 +1,12 @@
-use crate::parser::Parser;
-use crate::value::Json;
-
+pub mod generate;
 pub mod parser;
 pub mod token;
 pub mod tokenizer;
 pub mod value;
+
+use crate::generate::CodeGenerator;
+use crate::parser::Parser;
+use crate::value::Json;
 
 fn do_nothing() {}
 
@@ -13,10 +15,11 @@ pub fn parse(s: &str) -> Json {
     parser.product()
 }
 
-pub fn stringify<T>(_o: T) -> String
+pub fn stringify<T>(o: T) -> String
 where
     T: Into<Json>,
 {
-    // TODO
-    String::new()
+    let mut gen = CodeGenerator::new();
+    gen.gather(&o.into());
+    gen.product()
 }
