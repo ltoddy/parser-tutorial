@@ -24,7 +24,7 @@ impl<'a> Tokenizer<'a> {
                     symbol.push(ch);
                     self.source.next();
                 }
-                _ => break,
+                _ => break, // 遇到非英文小写字母，判定它结束
             }
         }
 

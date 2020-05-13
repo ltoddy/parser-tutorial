@@ -183,9 +183,8 @@ fn read_number(&mut self, first: char) -> f64 {
 }
 ```
 
-对于符号(null, true, false)这样子的, `{ "is_symbol": true }`比如这样子的json字符串.
-`true`不像字符串,会有双引号包围,那么对于判断符号,它只要是字母符号开头就可以了.当遇到其他
-字符(空格),便可以视作符号结束.
+对于符号`null`, `true`, `false`, `{ "is_symbol": true }`比如这样子的json字符串。
+它们不像字符串，由两个双引号包围，它们只是由单纯的英文小写字母组成。
 
 *src/tokenizer.rs*
 
@@ -199,7 +198,7 @@ fn read_symbol(&mut self, first: char) -> String {
                 symbol.push(ch);
                 self.source.next();
             }
-            _ => break,
+            _ => break, // 遇到非英文小写字母，判定它结束
         }
     }
 
