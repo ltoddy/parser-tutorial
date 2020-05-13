@@ -229,7 +229,7 @@ pub enum Json {
 }
 ```
 
-如果你不清楚Json, 你可以看下: https://www.json.org/json-zh.html
+如果你不清楚Json, 你可以看下: [Introducing JSON](https://www.json.org/json-zh.html)
 
 下一步,编写Parser!
 
