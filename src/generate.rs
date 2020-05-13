@@ -4,18 +4,20 @@ use crate::value::Json;
 
 pub struct CodeGenerator {
     value: String,
-    indentation: u16,
 }
 
 impl CodeGenerator {
     pub fn new() -> Self {
         Self {
             value: String::new(),
-            indentation: 0,
         }
     }
 
     pub fn gather(&mut self, json: &Json) {
+        self.write_json(json)
+    }
+
+    fn write_json(&mut self, json: &Json) {
         match *json {
             Json::Null => self.write("null"),
             Json::Boolean(ref b) => self.write(if *b { "true" } else { "false" }),
@@ -40,11 +42,29 @@ impl CodeGenerator {
 
     fn write_array(&mut self, array: &[Json]) {
         self.write_char('[');
+
+        for (i, elem) in array.iter().enumerate() {
+            self.write_json(elem);
+            if i != (array.len() - 1) {
+                self.write_char(',');
+            }
+        }
+
         self.write_char(']');
     }
 
     fn write_object(&mut self, object: &HashMap<String, Json>) {
         self.write_char('{');
+
+        for (i, (key, value)) in object.iter().enumerate() {
+            self.write(&format!("{:?}", key));
+            self.write_char(':');
+            self.write_json(value);
+            if i != (object.len() - 1) {
+                self.write_char(',');
+            }
+        }
+
         self.write_char('}');
     }
 }
