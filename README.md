@@ -17,7 +17,7 @@
 - 用于解析JSON的 `parse()` 方法.
 - 以及将对象/值转换为`JSON`字符串的`stringify()`方法。
 
-### 第一步，编写`Tokenizer`
+### 第一步，编写`Tokenizer`!
 
 我们将一个字符串进行初次解析，将一个一个的符号，变成我们的数据结构（Token），每个`Token`会标识，“它”是什么， 例如：
 
@@ -212,9 +212,9 @@ fn read_symbol(&mut self, first: char) -> String {
 的时候,为什么?很简单,`Token`也是我们自己定义的数据结构,而且它在内存中,我们想怎么用它就可以
 怎么用它.
 
-下面,我们将我们一系列的`Token`解析成我们的`JSON`.
+### 第二步，编写`Parser`!
 
-### 第二步，编写`Parser`
+下面,我们将我们一系列的`Token`解析成我们的`JSON`.
 
 *src/value.rs*
 
@@ -230,8 +230,6 @@ pub enum Json {
 ```
 
 如果你不清楚Json, 你可以看下: [Introducing JSON](https://www.json.org/json-zh.html)
-
-下一步,编写Parser!
 
 Parser接受字符串,借助我们刚才编写的Tokenizer, 然输出抽样语法树(一般来说,Parser接受字符串,然后输出抽象语法书,不过,管他呢,我们能实现我们想要实现的便可,管它具体的定义呢),
 对于我们的Json Parser,输出的就是我们刚才定义的`Json`结构.
