@@ -1,10 +1,11 @@
-pub mod generate;
+pub mod code_generator;
+pub mod implement;
 pub mod parser;
 pub mod token;
 pub mod tokenizer;
 pub mod value;
 
-use crate::generate::CodeGenerator;
+use crate::code_generator::CodeGenerator;
 use crate::parser::Parser;
 use crate::value::Json;
 
