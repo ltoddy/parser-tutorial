@@ -5,24 +5,6 @@ use crate::token::Token;
 use crate::tokenizer::Tokenizer;
 use crate::value::Json;
 
-impl Into<Json> for HashMap<String, Json> {
-    fn into(mut self) -> Json {
-        let mut object = HashMap::new();
-
-        for (key, value) in self.drain() {
-            object.insert(key, value);
-        }
-
-        Json::Object(object)
-    }
-}
-
-impl Into<Json> for Vec<Json> {
-    fn into(self) -> Json {
-        Json::Array(self)
-    }
-}
-
 pub struct Parser<'a> {
     tokenizer: Tokenizer<'a>,
 }
