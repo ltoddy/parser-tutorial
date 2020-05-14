@@ -13,7 +13,7 @@ fn do_nothing() {}
 
 pub fn parse(s: &str) -> Json {
     let mut parser = Parser::new(s);
-    parser.product()
+    parser.parse()
 }
 
 pub fn stringify<T>(o: T) -> String

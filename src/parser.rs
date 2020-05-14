@@ -20,17 +20,17 @@ impl<'a> Parser<'a> {
         self.tokenizer.next().expect("Unexpected end of JSON!!!")
     }
 
-    fn array(&mut self) -> Json {
+    fn parse_array(&mut self) -> Json {
         let mut array = Vec::new();
 
         match self.step() {
             Token::BracketOff => return array.into(),
-            token => array.push(self.product_from(token)),
+            token => array.push(self.parse_from(token)),
         }
 
         loop {
             match self.step() {
-                Token::Comma => array.push(self.product()),
+                Token::Comma => array.push(self.parse()),
                 Token::BracketOff => break,
                 token => panic!("Unexpected token {:?}", token),
             }
@@ -39,7 +39,7 @@ impl<'a> Parser<'a> {
         array.into()
     }
 
-    fn object(&mut self) -> Json {
+    fn parse_object(&mut self) -> Json {
         let mut object = HashMap::new();
 
         match self.step() {
@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
                     Token::Colon => do_nothing(),
                     token => panic!("Unexpected token {:?}", token),
                 }
-                let value = self.product();
+                let value = self.parse();
                 object.insert(key, value);
             }
             token => panic!("Unexpected token {:?}", token),
@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
                         Token::Colon => {}
                         token => panic!("Unexpected token {:?}", token),
                     }
-                    let value = self.product();
+                    let value = self.parse();
                     object.insert(key, value);
                 }
                 Token::BraceOff => break,
@@ -77,21 +77,21 @@ impl<'a> Parser<'a> {
         object.into()
     }
 
-    pub fn product_from(&mut self, token: Token) -> Json {
+    fn parse_from(&mut self, token: Token) -> Json {
         match token {
             Token::Null => Json::Null,
             Token::String(v) => Json::String(v),
             Token::Number(v) => Json::Number(v),
             Token::Boolean(v) => Json::Boolean(v),
-            Token::BracketOn => self.array(),
-            Token::BraceOn => self.object(),
+            Token::BracketOn => self.parse_array(),
+            Token::BraceOn => self.parse_object(),
             _ => panic!("Unexpected token: {:?}", token),
         }
     }
 
-    pub fn product(&mut self) -> Json {
+    pub fn parse(&mut self) -> Json {
         let token = self.step();
 
-        self.product_from(token)
+        self.parse_from(token)
     }
 }
