@@ -123,31 +123,33 @@ impl<'a> Iterator for Tokenizer<'a> {
 *src/tokenizer.rs*
 
 ```rust
-fn read_string(&mut self, first: char) -> String {
-    let mut value = String::new();
-    let mut escape = false;
-
-    while let Some(ch) = self.source.next() {
-        if ch == first && escape == false {
-            return value;
-        }
-        match ch {
-            '\\' => {
-                if escape {
-                    escape = false;
+impl<'a> Tokenizer<'a> {
+    fn read_string(&mut self, first: char) -> String {
+        let mut value = String::new();
+        let mut escape = false;
+    
+        while let Some(ch) = self.source.next() {
+            if ch == first && escape == false {
+                return value;
+            }
+            match ch {
+                '\\' => {
+                    if escape {
+                        escape = false;
+                        value.push(ch);
+                    } else {
+                        escape = true;
+                    }
+                }
+                _ => {
                     value.push(ch);
-                } else {
-                    escape = true;
+                    escape = false;
                 }
             }
-            _ => {
-                value.push(ch);
-                escape = false;
-            }
         }
+    
+        value
     }
-
-    value
 }
 ```
 
@@ -157,30 +159,32 @@ fn read_string(&mut self, first: char) -> String {
 *src/tokenizer.rs*
 
 ```rust
-fn read_number(&mut self, first: char) -> f64 {
-    let mut value = first.to_string();
-    let mut point = false;
-
-    while let Some(&ch) = self.source.peek() {
-        match ch {
-            '0'..='9' => {
-                value.push(ch);
-                self.source.next();
-            }
-            '.' => {
-                if !point {
-                    point = true;
+impl<'a> Tokenizer<'a> {
+    fn read_number(&mut self, first: char) -> f64 {
+        let mut value = first.to_string();
+        let mut point = false;
+    
+        while let Some(&ch) = self.source.peek() {
+            match ch {
+                '0'..='9' => {
                     value.push(ch);
                     self.source.next();
-                } else {
-                    return value.parse::<f64>().unwrap();
                 }
+                '.' => {
+                    if !point {
+                        point = true;
+                        value.push(ch);
+                        self.source.next();
+                    } else {
+                        return value.parse::<f64>().unwrap();
+                    }
+                }
+                _ => return value.parse::<f64>().unwrap(),
             }
-            _ => return value.parse::<f64>().unwrap(),
         }
+    
+        value.parse::<f64>().unwrap()
     }
-
-    value.parse::<f64>().unwrap()
 }
 ```
 
@@ -190,20 +194,22 @@ fn read_number(&mut self, first: char) -> f64 {
 *src/tokenizer.rs*
 
 ```rust
-fn read_symbol(&mut self, first: char) -> String {
-    let mut symbol = first.to_string();
-
-    while let Some(&ch) = self.source.peek() {
-        match ch {
-            'a'..='z' => {
-                symbol.push(ch);
-                self.source.next();
+impl<'a> Tokenizer<'a> {
+    fn read_symbol(&mut self, first: char) -> String {
+        let mut symbol = first.to_string();
+    
+        while let Some(&ch) = self.source.peek() {
+            match ch {
+                'a'..='z' => {
+                    symbol.push(ch);
+                    self.source.next();
+                }
+                _ => break, // 遇到非英文小写字母，判定它结束
             }
-            _ => break, // 遇到非英文小写字母，判定它结束
         }
+    
+        symbol
     }
-
-    symbol
 }
 ```
 
@@ -233,3 +239,41 @@ pub enum Json {
 
 Parser接受字符串,借助我们刚才编写的Tokenizer, 然输出抽样语法树(一般来说,Parser接受字符串,然后输出抽象语法书,不过,管他呢,我们能实现我们想要实现的便可,管它具体的定义呢),
 对于我们的Json Parser,输出的就是我们刚才定义的`Json`结构.
+
+```rust
+pub struct Parser<'a> {
+    tokenizer: Tokenizer<'a>,
+}
+```
+
+这就是我们`Parser`的定义，它内含一个`Tokenizer`，要借助它生成的`Toekn`去变成`Json`。
+
+```rust
+impl<'a> Parser<'a> {
+    pub fn parse(&mut self) -> Json {
+        let token = self.step();
+
+        self.parse_from(token)
+    }
+
+    fn step(&mut self) -> Token {
+        self.tokenizer.next().expect("Unexpected end of JSON!!!")
+    }
+
+    fn parse_from(&mut self, token: Token) -> Json {
+        match token {
+            Token::Null => Json::Null,
+            Token::String(v) => Json::String(v),
+            Token::Number(v) => Json::Number(v),
+            Token::Boolean(v) => Json::Boolean(v),
+            Token::BracketOn => self.parse_array(),
+            Token::BraceOn => self.parse_object(),
+            _ => panic!("Unexpected token: {:?}", token),
+        }
+    }
+}
+```
+
+以上代码就是`Parser`的核心了，其运行原理与`Tokenizer`相仿。
+
+`Json`中的数据结构：`boolean`，`string`，`null`，以及`array`（以左方括号开头），`object`（以左花括号开头）。
