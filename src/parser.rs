@@ -16,6 +16,12 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn parse(&mut self) -> Json {
+        let token = self.step();
+
+        self.parse_from(token)
+    }
+
     fn step(&mut self) -> Token {
         self.tokenizer.next().expect("Unexpected end of JSON!!!")
     }
@@ -80,18 +86,12 @@ impl<'a> Parser<'a> {
     fn parse_from(&mut self, token: Token) -> Json {
         match token {
             Token::Null => Json::Null,
-            Token::String(v) => Json::String(v),
-            Token::Number(v) => Json::Number(v),
-            Token::Boolean(v) => Json::Boolean(v),
+            Token::String(s) => Json::String(s),
+            Token::Number(n) => Json::Number(n),
+            Token::Boolean(b) => Json::Boolean(b),
             Token::BracketOn => self.parse_array(),
             Token::BraceOn => self.parse_object(),
             _ => panic!("Unexpected token: {:?}", token),
         }
-    }
-
-    pub fn parse(&mut self) -> Json {
-        let token = self.step();
-
-        self.parse_from(token)
     }
 }

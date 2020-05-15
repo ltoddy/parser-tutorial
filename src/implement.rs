@@ -1,6 +1,6 @@
-use crate::value::Json;
 use std::collections::HashMap;
-use std::collections::hash_map::RandomState;
+
+use crate::value::Json;
 
 macro_rules! impl_from_num_for_json {
     ($($t:ident)*) => {
@@ -41,7 +41,7 @@ impl From<Vec<Json>> for Json {
 }
 
 impl From<HashMap<String, Json>> for Json {
-    fn from(mut map: HashMap<String, Json, RandomState>) -> Self {
+    fn from(mut map: HashMap<String, Json>) -> Self {
         let mut object = HashMap::new();
 
         for (key, value) in map.drain() {
