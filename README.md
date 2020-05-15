@@ -240,6 +240,8 @@ pub enum Json {
 Parser接受字符串,借助我们刚才编写的Tokenizer, 然输出抽样语法树(一般来说,Parser接受字符串,然后输出抽象语法书,不过,管他呢,我们能实现我们想要实现的便可,管它具体的定义呢),
 对于我们的Json Parser,输出的就是我们刚才定义的`Json`结构.
 
+*src/parser*
+
 ```rust
 pub struct Parser<'a> {
     tokenizer: Tokenizer<'a>,
@@ -247,6 +249,8 @@ pub struct Parser<'a> {
 ```
 
 这就是我们`Parser`的定义，它内含一个`Tokenizer`，要借助它生成的`Toekn`去变成`Json`。
+
+*src/parser*
 
 ```rust
 impl<'a> Parser<'a> {
@@ -276,4 +280,38 @@ impl<'a> Parser<'a> {
 
 以上代码就是`Parser`的核心了，其运行原理与`Tokenizer`相仿。
 
-`Json`中的数据结构：`boolean`，`string`，`null`，以及`array`（以左方括号开头），`object`（以左花括号开头）。
+`Json`中的数据结构：`boolean`，`string`，`null`，以及`array`（以左方括号开头，右方括号结尾），`object`（以左花括号开头，右花括号结尾）。
+
+借助于`Tokenizer`生成`Token`，进行模式匹配，当遇到`Token::Null`，`Token::String(s)`，`Token::Number(n)`，`Token::Boolean(b)`，
+这些时，直接返回就可以了，毕竟我们已经在实现`Tokenizer`的时候处理过了。
+
+当遇到`Token::BracketOn`，左括号！这是`array`开始的符号，那么我们交给`self.parse_array()`处理：
+
+*src/parser*
+
+```rust
+impl<'a> Parser<'a> {
+    fn parse_array(&mut self) -> Json {
+        let mut array = Vec::new();
+
+        match self.step() {
+            Token::BracketOff => return array.into(),
+            token => array.push(self.parse_from(token)),
+        }
+
+        loop {
+            match self.step() {
+                Token::Comma => array.push(self.parse()),
+                Token::BracketOff => break,
+                token => panic!("Unexpected token {:?}", token),
+            }
+        }
+
+        array.into()
+    }
+}
+```
+
+如上使我们如何处理`array`，当遇到右方括号的时候，表明`array`结束了，返回即可。
+对于我们`array`类型，其每一个元素都可以为`Json`，并且，元素之间用逗号分割，
+那么当遇到逗号`Token：：Comma`的时候，就可以断定一个新的元素出现。
