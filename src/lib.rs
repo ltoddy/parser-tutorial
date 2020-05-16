@@ -1,4 +1,5 @@
 pub mod code_generator;
+pub mod error;
 pub mod implement;
 pub mod parser;
 pub mod token;
@@ -6,8 +7,11 @@ pub mod tokenizer;
 pub mod value;
 
 use crate::code_generator::CodeGenerator;
+use crate::error::JsonError;
 use crate::parser::Parser;
 use crate::value::Json;
+
+pub type Result<T> = std::result::Result<T, JsonError>;
 
 fn do_nothing() {}
 
