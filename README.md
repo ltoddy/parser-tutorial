@@ -287,7 +287,7 @@ impl<'a> Parser<'a> {
 
 当遇到`Token::BracketOn`，左括号！这是`array`开始的符号，那么我们交给`self.parse_array()`处理：
 
-*src/parser*
+*src/parser.rs*
 
 ```rust
 impl<'a> Parser<'a> {
@@ -315,3 +315,62 @@ impl<'a> Parser<'a> {
 如上使我们如何处理`array`，当遇到右方括号的时候，表明`array`结束了，返回即可。
 对于我们`array`类型，其每一个元素都可以为`Json`，并且，元素之间用逗号分割，
 那么当遇到逗号`Token：：Comma`的时候，就可以断定一个新的元素出现。
+
+当遇到`Token::BraceOn`，左花括号！这是`object`开始的符号，那么我们交给`self.parse_object()`处理：
+
+*src/parser.rs*
+
+```rust
+impl<'a> Parser<'a> {
+    fn parse_object(&mut self) -> Json {
+        let mut object = HashMap::new();
+
+        match self.step() {
+            Token::BraceOff => return object.into(),
+            Token::String(key) => {
+                match self.step() {
+                    Token::Colon => do_nothing(),
+                    token => panic!("Unexpected token {:?}", token),
+                }
+                let value = self.parse();
+                object.insert(key, value);
+            }
+            token => panic!("Unexpected token {:?}", token),
+        }
+
+        loop {
+            match self.step() {
+                Token::Comma => {
+                    let key = match self.step() {
+                        Token::String(key) => key,
+                        token => panic!("Unexpected token {:?}", token),
+                    };
+                    match self.step() {
+                        Token::Colon => {}
+                        token => panic!("Unexpected token {:?}", token),
+                    }
+                    let value = self.parse();
+                    object.insert(key, value);
+                }
+                Token::BraceOff => break,
+                token => panic!("Unexpected token {:?}", token),
+            }
+        }
+
+        object.into()
+    }
+}
+```
+
+与`parse_object`同理。
+
+做到这里，目标之一的`parse`函数就能够实现了:
+
+*src/lib.rs*
+
+```rust
+pub fn parse(s: &str) -> Json {
+    let mut parser = Parser::new(s);
+    parser.parse()
+}
+```
