@@ -17,6 +17,10 @@ impl CodeGenerator {
         self.write_json(json)
     }
 
+    pub fn product(self) -> String {
+        self.value
+    }
+
     fn write_json(&mut self, json: &Json) {
         match *json {
             Json::Null => self.write("null"),
@@ -26,10 +30,6 @@ impl CodeGenerator {
             Json::Array(ref a) => self.write_array(a),
             Json::Object(ref o) => self.write_object(o),
         }
-    }
-
-    pub fn product(self) -> String {
-        self.value
     }
 
     fn write(&mut self, slice: &str) {

@@ -381,11 +381,112 @@ pub fn parse(s: &str) -> Json {
 
 当我们实现从一个字符串变成`Json`结构后，也要实现`Json`结构变回原来的字符串。
 
+*src/code_generator.rs*
+
+```rust
+pub struct CodeGenerator {
+    value: String,
+}
+
+impl CodeGenerator {
+    pub fn new() -> Self {
+        Self {
+            value: String::new(),
+        }
+    }
+
+    pub fn gather(&mut self, json: &Json) {
+        self.write_json(json)
+    }
+
+    pub fn product(self) -> String {
+        self.value
+    }
+
+    fn write(&mut self, slice: &str) {
+        self.value.push_str(slice);
+    }
+
+    fn write_char(&mut self, ch: char) {
+        self.value.push(ch);
+    }
+
+    fn write_json(&mut self, json: &Json) {
+        match *json {
+            Json::Null => self.write("null"),
+            Json::Boolean(ref b) => self.write(if *b { "true" } else { "false" }),
+            Json::Number(ref n) => self.write(&n.to_string()),
+            Json::String(ref s) => self.write(&format!("{:?}", s)),
+            Json::Array(ref a) => self.write_array(a),
+            Json::Object(ref o) => self.write_object(o),
+        }
+    }
+}
+```
+
+定义一个`CodeGenerator`结构体，接受一个`Json`，然后产生一个`String`。
+
+对于将`Json`转化成`String`这个功能，相对来说就简单多了。如果你过去学过比如Java，Python
+Ruby等等一些面向对象的语言的话，都会知道一个对象的方法：`toString`（Python是`__str__`，Ruby是`to_s`）。
+
+换句话说，我们就是给`Json`增添一个`toString`方法。而且，`Json`是我们自己定义的有规则的数据结构，实现它变成
+`String`的操作就简单了许多。
+
+那么，如上述代码，还是利用模式匹配，去实现`Json`到`String`的转换。
+
+唯一有一点点复杂的也就是`Array`和`Object`的转换。
+
+*src/code_generator.rs*
+
+```rust
+impl CodeGenerator {
+    fn write_array(&mut self, array: &[Json]) {
+        self.write_char('[');
+
+        for (i, elem) in array.iter().enumerate() {
+            self.write_json(elem);
+            if i != (array.len() - 1) {
+                self.write_char(',');
+            }
+        }
+
+        self.write_char(']');
+    }
+}
+```
+
+对于一个`Array`，他形如`[element1, element2, element3, ...]`，左右两边各有一个方括号。
+里面的元素之间由逗号相隔（除了最后一个元素外，其他元素后尾随一个逗号）。
+
+*src/code_generator.rs*
+
+```rust
+impl CodeGenerator {
+    fn write_object(&mut self, object: &HashMap<String, Json>) {
+        self.write_char('{');
+
+        for (i, (key, value)) in object.iter().enumerate() {
+            self.write(&format!("{:?}", key));
+            self.write_char(':');
+            self.write_json(value);
+            if i != (object.len() - 1) {
+                self.write_char(',');
+            }
+        }
+
+        self.write_char('}');
+    }
+}
+```
+
+
 
 ### 下一步？
 
-- **错误处理**， rust提供了`Result`枚举，以及`？`语法糖来做错误处理。（尽可能的在Rust中规避使用`panic!`）
+- **错误处理**， rust提供了`Result`枚举，以及`？`语法糖来做错误处理。（尽可能的在Rust中避免使用`panic!`）
 - **过程宏**，实现`jsonify`过程宏，使得用户定义的数据结构能够反序列化`Json`和序列化成`Json`。
+- **实现json formatter**
+
 
 ### 更多的学习
 
