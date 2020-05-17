@@ -479,7 +479,78 @@ impl CodeGenerator {
 }
 ```
 
+对于`Object`，它形如`"{ "key1": value1, "key2": value2, ... }"`，左右两边各有一个花括号。
+里面元素为`key-value`形式，`key`与`value`之间有一个冒号，并且，`key`为`String`类型，`value`为`Json`类型。
+同时在`key-value`与`key-value`也有逗号分隔。
 
+最后，实现我们的`stingify`方法：
+
+```rust
+pub fn stringify<T>(o: T) -> String
+where
+    T: Into<Json>,
+{
+    let mut gen = CodeGenerator::new();
+    gen.gather(&o.into());
+    gen.product()
+}
+```
+
+### 第四步，实现泛型
+
+*src/implement.rs*
+
+```rust
+macro_rules! impl_from_num_for_json {
+    ($($t:ident)*) => {
+        $(
+            impl From<$t> for Json {
+                fn from(n: $t) -> Json {
+                    Json::Number(n as f64)
+                }
+            }
+        )*
+    };
+}
+
+impl_from_num_for_json!(u8 i8 u16 i16 u32 i32 u64 i64 usize isize f32 f64);
+
+impl From<bool> for Json {
+    fn from(b: bool) -> Json {
+        Json::Boolean(b)
+    }
+}
+
+impl From<String> for Json {
+    fn from(s: String) -> Json {
+        Json::String(s)
+    }
+}
+
+impl<'a> From<&'a str> for Json {
+    fn from(s: &'a str) -> Json {
+        Json::String(s.to_string())
+    }
+}
+
+impl From<Vec<Json>> for Json {
+    fn from(v: Vec<Json>) -> Self {
+        Json::Array(v)
+    }
+}
+
+impl From<HashMap<String, Json>> for Json {
+    fn from(mut map: HashMap<String, Json>) -> Self {
+        let mut object = HashMap::new();
+
+        for (key, value) in map.drain() {
+            object.insert(key, Json::from(value));
+        }
+
+        Json::Object(object)
+    }
+}
+```
 
 ### 下一步？
 
