@@ -2,6 +2,8 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::token::Token;
+use crate::Result;
+use crate::error::JsonError;
 
 pub struct Tokenizer<'a> {
     source: Peekable<Chars<'a>>,
@@ -99,33 +101,33 @@ impl<'a> Tokenizer<'a> {
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
-    type Item = Token;
+    type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
         'lex: while let Some(ch) = self.source.next() {
             return Some(match ch {
-                ',' => Token::Comma,
-                ':' => Token::Colon,
-                '[' => Token::BracketOn,
-                ']' => Token::BracketOff,
-                '{' => Token::BraceOn,
-                '}' => Token::BraceOff,
-                '"' => Token::String(self.read_string(ch)),
-                '0'..='9' => Token::Number(self.read_number(ch)),
+                ',' => Ok(Token::Comma),
+                ':' => Ok(Token::Colon),
+                '[' => Ok(Token::BracketOn),
+                ']' => Ok(Token::BracketOff),
+                '{' => Ok(Token::BraceOn),
+                '}' => Ok(Token::BraceOff),
+                '"' => Ok(Token::String(self.read_string(ch))),
+                '0'..='9' => Ok(Token::Number(self.read_number(ch))),
                 'a'..='z' => {
                     let label = self.read_symbol(ch);
                     match label.as_ref() {
-                        "true" => Token::Boolean(true),
-                        "false" => Token::Boolean(false),
-                        "null" => Token::Null,
-                        _ => panic!("Invalid label: {}", label),
+                        "true" => Ok(Token::Boolean(true)),
+                        "false" => Ok(Token::Boolean(false)),
+                        "null" => Ok(Token::Null),
+                        _ => Err(JsonError::InvalidLabel(label)),
                     }
                 }
                 _ => {
                     if ch.is_whitespace() {
                         continue 'lex;
                     } else {
-                        panic!("Invalid character: {}", ch);
+                        Err(JsonError::InvalidCharacter(ch))
                     }
                 }
             });

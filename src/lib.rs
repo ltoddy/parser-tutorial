@@ -15,7 +15,7 @@ pub type Result<T> = std::result::Result<T, JsonError>;
 
 fn do_nothing() {}
 
-pub fn parse(s: &str) -> Json {
+pub fn parse(s: &str) -> Result<Json> {
     let mut parser = Parser::new(s);
     parser.parse()
 }

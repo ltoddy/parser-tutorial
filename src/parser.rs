@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
 use crate::do_nothing;
+use crate::error::JsonError;
 use crate::token::Token;
 use crate::tokenizer::Tokenizer;
 use crate::value::Json;
+use crate::Result;
 
 pub struct Parser<'a> {
     tokenizer: Tokenizer<'a>,
@@ -16,82 +18,83 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Json {
-        let token = self.step();
+    pub fn parse(&mut self) -> Result<Json> {
+        let token = self.step()?;
 
         self.parse_from(token)
     }
 
-    fn step(&mut self) -> Token {
+    fn step(&mut self) -> Result<Token> {
+        // TODO
         self.tokenizer.next().expect("Unexpected end of JSON!!!")
     }
 
-    fn parse_array(&mut self) -> Json {
+    fn parse_array(&mut self) -> Result<Json> {
         let mut array = Vec::new();
 
-        match self.step() {
-            Token::BracketOff => return array.into(),
-            token => array.push(self.parse_from(token)),
+        match self.step()? {
+            Token::BracketOff => return Ok(array.into()),
+            token => array.push(self.parse_from(token)?),
         }
 
         loop {
-            match self.step() {
-                Token::Comma => array.push(self.parse()),
+            match self.step()? {
+                Token::Comma => array.push(self.parse()?),
                 Token::BracketOff => break,
-                token => panic!("Unexpected token {:?}", token),
+                token => return Err(JsonError::UnexpectedToken(token)),
             }
         }
 
-        array.into()
+        Ok(array.into())
     }
 
-    fn parse_object(&mut self) -> Json {
+    fn parse_object(&mut self) -> Result<Json> {
         let mut object = HashMap::new();
 
-        match self.step() {
-            Token::BraceOff => return object.into(),
+        match self.step()? {
+            Token::BraceOff => return Ok(object.into()),
             Token::String(key) => {
-                match self.step() {
+                match self.step()? {
                     Token::Colon => do_nothing(),
-                    token => panic!("Unexpected token {:?}", token),
+                    token => return Err(JsonError::UnexpectedToken(token)),
                 }
-                let value = self.parse();
+                let value = self.parse()?;
                 object.insert(key, value);
             }
-            token => panic!("Unexpected token {:?}", token),
+            token => return Err(JsonError::UnexpectedToken(token)),
         }
 
         loop {
-            match self.step() {
+            match self.step()? {
                 Token::Comma => {
-                    let key = match self.step() {
+                    let key = match self.step()? {
                         Token::String(key) => key,
-                        token => panic!("Unexpected token {:?}", token),
+                        token => return Err(JsonError::UnexpectedToken(token)),
                     };
-                    match self.step() {
+                    match self.step()? {
                         Token::Colon => {}
-                        token => panic!("Unexpected token {:?}", token),
+                        token => return Err(JsonError::UnexpectedToken(token)),
                     }
-                    let value = self.parse();
+                    let value = self.parse()?;
                     object.insert(key, value);
                 }
                 Token::BraceOff => break,
-                token => panic!("Unexpected token {:?}", token),
+                token => return Err(JsonError::UnexpectedToken(token)),
             }
         }
 
-        object.into()
+        Ok(object.into())
     }
 
-    fn parse_from(&mut self, token: Token) -> Json {
+    fn parse_from(&mut self, token: Token) -> Result<Json> {
         match token {
-            Token::Null => Json::Null,
-            Token::String(s) => Json::String(s),
-            Token::Number(n) => Json::Number(n),
-            Token::Boolean(b) => Json::Boolean(b),
+            Token::Null => Ok(Json::Null),
+            Token::String(s) => Ok(Json::String(s)),
+            Token::Number(n) => Ok(Json::Number(n)),
+            Token::Boolean(b) => Ok(Json::Boolean(b)),
             Token::BracketOn => self.parse_array(),
             Token::BraceOn => self.parse_object(),
-            _ => panic!("Unexpected token: {:?}", token),
+            _ => Err(JsonError::UnexpectedToken(token)),
         }
     }
 }
