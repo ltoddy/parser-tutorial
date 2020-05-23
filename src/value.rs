@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Json {
     Null,
     String(String),

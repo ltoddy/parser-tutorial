@@ -1,6 +1,7 @@
 pub mod code_generator;
 pub mod error;
 pub mod implement;
+pub mod macros;
 pub mod parser;
 pub mod token;
 pub mod tokenizer;
