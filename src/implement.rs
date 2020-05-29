@@ -45,7 +45,7 @@ impl From<HashMap<String, Json>> for Json {
         let mut object = HashMap::new();
 
         for (key, value) in map.drain() {
-            object.insert(key, Json::from(value));
+            object.insert(key, value);
         }
 
         Json::Object(object)

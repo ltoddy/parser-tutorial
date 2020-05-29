@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::value::Json;
 
+#[derive(Default)]
 pub struct CodeGenerator {
     value: String,
 }
