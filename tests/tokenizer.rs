@@ -46,6 +46,18 @@ pub mod tokenizer_tests {
     }
 
     #[test]
+    pub fn should_parse_number_value() {
+        let mut tokenizer = Tokenizer::new("123");
+        assert_eq!(tokenizer.next(), Some(Token::Number(123.)));
+
+        let mut tokenizer = Tokenizer::new("1.23");
+        assert_eq!(tokenizer.next(), Some(Token::Number(1.23)));
+
+        let mut tokenizer = Tokenizer::new("-1.23");
+        assert_eq!(tokenizer.next(), Some(Token::Number(-1.23)));
+    }
+
+    #[test]
     pub fn should_parse_object() {
         let mut tokenizer = Tokenizer::new(r#"{ "key": "value" }"#);
 

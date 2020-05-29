@@ -46,7 +46,7 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(&ch) = self.source.peek() {
             match ch {
-                '0'..='9' => {
+                '0'..='9' | '-' => {
                     value.push(ch);
                     self.source.next();
                 }
@@ -111,7 +111,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                 '{' => Token::BraceOn,
                 '}' => Token::BraceOff,
                 '"' => Token::String(self.read_string(ch)),
-                '0'..='9' => Token::Number(self.read_number(ch)),
+                '0'..='9' | '-' => Token::Number(self.read_number(ch)),
                 'a'..='z' => {
                     let label = self.read_symbol(ch);
                     match label.as_ref() {
